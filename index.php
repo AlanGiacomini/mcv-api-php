@@ -11,8 +11,11 @@ define('URL', 'http://localhost/mvc2025');
 $obRouter = new Router(URL);
 
 //Rota Home
-$obRouter->get('/', [
+$obRouter->post('/', [
     function(){
         return new Response(200, Home::getHome());
     }
 ]);
+
+//IMPRIME O RESPONSE DA ROTA
+$obRouter->run()->sendResponse();

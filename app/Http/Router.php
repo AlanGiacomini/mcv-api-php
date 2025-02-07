@@ -2,6 +2,9 @@
 
 namespace App\Http;
 
+use \Closure;
+use \Exception;
+
 class Router{
 
     /**
@@ -59,15 +62,20 @@ class Router{
      * @param array $params
      */
     private function addRoute($method, $route, $params = []){
-        echo '<pre>';
-        print_r($method);
-        echo '<pre>';
-        echo '<pre>';
-        print_r($route);
-        echo '<pre>';
-        echo '<pre>';
-        print_r($params);
-        echo '<pre>';
+        //VALIDAÇÃO DOS PARÂMETROS
+        foreach ($params as $key => $value) {
+            if ($value instanceof Closure) {
+                $params['Controller'] = $value;
+                unset($params[$key]);
+                continue;
+            }
+        }
+
+        //PADRÃO DE VALIDAÇÃO DA URL
+        $patternRoute = '/^'.str_replace('/', '\/', $route).'$/';
+
+        //ADICIONA A ROTA DENTRO DA CLASSE;
+        $this->routes[$patternRoute][$method] = $params;
     }
 
     /**
@@ -77,5 +85,89 @@ class Router{
      */
     public function get($route, $params = []){
         return $this->addRoute('GET', $route, $params);
+    }
+
+    /**
+     * Método responsável por definir uma rota de POST
+     * @param string $route
+     * @param array $params
+     */
+    public function post($route, $params = []){
+        return $this->addRoute('POST', $route, $params);
+    }
+
+    /**
+     * Método responsável por definir uma rota de PUT
+     * @param string $route
+     * @param array $params
+     */
+    public function put($route, $params = []){
+        return $this->addRoute('PUT', $route, $params);
+    }
+
+    /**
+     * Método responsável por definir uma rota de DELETE
+     * @param string $route
+     * @param array $params
+     */
+    public function delete($route, $params = []){
+        return $this->addRoute('DELETE', $route, $params);
+    }
+
+    /**
+     * Método responsável por retornar a URI desconsiderando o prefixo
+     * @return string
+     */
+    private function getUri(){
+        //URI da REQUEST
+        $uri = $this->request->getUri();
+
+        // FATIA A URI COM O PREFIX
+        $xUri = strlen($this->prefix) ? explode($this->prefix, $uri) : ($uri);
+
+        // Retorna a Uri sem prefixo
+        return end($xUri);
+    }
+
+    /**
+     * Método responsável por retornar os dados da rota atual
+     * @return array
+     */
+    private function getRoute(){
+        //URI
+        $uri = $this->getUri();
+
+        //METHOD
+        $httpMethod = $this->request->getHttpMethod();
+        echo '<pre>';
+        print_r($httpMethod);
+        echo '<pre>';
+
+        //VALIDA AS ROTAS
+        foreach ($this->routes as $patternRoute => $methods) {
+            //VERIFICA SE A URI BATE COM O PADRÃO
+            if(preg_match($patternRoute, $uri)){
+                //Verifica o método
+                if(isset($methods[$httpMethod])){
+                    return $methods[$httpMethod];
+                }
+                throw new Exception("Método não permitido", 405);
+            }
+            throw new Exception("URL não encontrada", 404);
+        }
+    }
+
+    /**
+     * Método responsável por executar a rota atual
+     * @return Response
+     */
+    public function run(){
+        try {
+            //OBTÉM A ROTA ATUAL
+            $route = $this->getRoute();
+
+        } catch (Exception $e) {
+            return new Response($e->getCode(), $e->getMessage());
+        }
     }
 }
