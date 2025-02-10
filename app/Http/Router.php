@@ -65,7 +65,7 @@ class Router{
         //VALIDAÇÃO DOS PARÂMETROS
         foreach ($params as $key => $value) {
             if ($value instanceof Closure) {
-                $params['Controller'] = $value;
+                $params['controller'] = $value;
                 unset($params[$key]);
                 continue;
             }
@@ -123,7 +123,7 @@ class Router{
         $uri = $this->request->getUri();
 
         // FATIA A URI COM O PREFIX
-        $xUri = strlen($this->prefix) ? explode($this->prefix, $uri) : ($uri);
+        $xUri = strlen($this->prefix) ? explode($this->prefix, $uri) : [$uri];
 
         // Retorna a Uri sem prefixo
         return end($xUri);
@@ -139,9 +139,6 @@ class Router{
 
         //METHOD
         $httpMethod = $this->request->getHttpMethod();
-        echo '<pre>';
-        print_r($httpMethod);
-        echo '<pre>';
 
         //VALIDA AS ROTAS
         foreach ($this->routes as $patternRoute => $methods) {
@@ -165,6 +162,17 @@ class Router{
         try {
             //OBTÉM A ROTA ATUAL
             $route = $this->getRoute();
+
+            //VERIFICA SE O CONTROLADOR EXISTE
+            if(!isset($route['controller'])){
+                throw new Exception('A URL não pôde ser processada', 500);
+            }
+
+            //ARGUMENTOS DA FUNÇÃO
+            $args = [];
+
+            return call_user_func_array($route['controller'], $args);
+
 
         } catch (Exception $e) {
             return new Response($e->getCode(), $e->getMessage());
