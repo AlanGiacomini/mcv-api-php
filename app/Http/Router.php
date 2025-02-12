@@ -4,6 +4,8 @@ namespace App\Http;
 
 use \Closure;
 use \Exception;
+use ReflectionFiber;
+use \ReflectionFunction;
 
 class Router{
 
@@ -153,9 +155,18 @@ class Router{
         //VALIDA AS ROTAS
         foreach ($this->routes as $patternRoute => $methods) {
             //VERIFICA SE A URI BATE COM O PADRÃO
-            if(preg_match($patternRoute, $uri)){
+            if(preg_match($patternRoute, $uri, $matches)){
                 //Verifica o método
                 if(isset($methods[$httpMethod])){
+                    //REMOVE O DADO DA POSIÇÃO 0 (SERIA A URL COMPLETA, QUE A GENTE NÃO PRECISA)
+                    unset($matches[0]);
+
+                    //PEGA AS VARIÁVEIS QUE VEM NA URL (e requisição) E COLOCA EM UM ARRAY PARA A GENTE CONSEGUIR USAR DEPOIS
+                    $keys = $methods[$httpMethod]['variables'];
+                    $methods[$httpMethod]['variables'] = array_combine($keys, $matches);
+                    $methods[$httpMethod]['variables']['request'] = $this->request;
+
+                    //RETORNO DOS PARÂMETROS DA ROTA
                     return $methods[$httpMethod];
                 }
                 throw new Exception("Método não permitido", 405);
@@ -174,10 +185,6 @@ class Router{
             //OBTÉM A ROTA ATUAL
             $route = $this->getRoute();
 
-            echo '<pre>';
-            print_r($route);
-            echo '<pre>';
-
             //VERIFICA SE O CONTROLADOR EXISTE
             if(!isset($route['controller'])){
                 throw new Exception('A URL não pôde ser processada', 500);
@@ -186,6 +193,14 @@ class Router{
             //ARGUMENTOS DA FUNÇÃO
             $args = [];
 
+            //REFLECTION
+            $reflection = new ReflectionFunction($route['controller']);
+            foreach ($reflection->getParameters() as $parameter) {
+                $name = $parameter->getName();
+                $args[$name] = $route['variables'][$name] ?? '';
+            }
+
+            //RETORNA A EXECUÇÃO DA FUNÇÃO
             return call_user_func_array($route['controller'], $args);
 
 
