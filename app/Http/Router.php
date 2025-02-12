@@ -71,6 +71,16 @@ class Router{
             }
         }
 
+        //VARIÁVEIS DA ROTA
+        $param['variables'] = [];
+
+        //PADRÃO DE VALIDAÇÃO DE VARIÁVEIS DE ROTAS
+        $patternVariable = '/{(.*?)}/';
+        if(preg_match_all($patternVariable, $route, $matches)){
+            $route = preg_replace($patternVariable, '(.*?)', $route);
+            $params['variables'] = $matches[1];
+        }
+
         //PADRÃO DE VALIDAÇÃO DA URL
         $patternRoute = '/^'.str_replace('/', '\/', $route).'$/';
 
@@ -150,8 +160,9 @@ class Router{
                 }
                 throw new Exception("Método não permitido", 405);
             }
-            throw new Exception("URL não encontrada", 404);
         }
+        //Se depois de verificar todas as rotas cadastradas, nenhuma der certo, ele retorna erro 404
+        throw new Exception("URL não encontrada", 404);
     }
 
     /**
@@ -162,6 +173,10 @@ class Router{
         try {
             //OBTÉM A ROTA ATUAL
             $route = $this->getRoute();
+
+            echo '<pre>';
+            print_r($route);
+            echo '<pre>';
 
             //VERIFICA SE O CONTROLADOR EXISTE
             if(!isset($route['controller'])){
