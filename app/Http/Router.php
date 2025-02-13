@@ -162,7 +162,7 @@ class Router{
                     unset($matches[0]);
 
                     //PEGA AS VARIÁVEIS QUE VEM NA URL (e requisição) E COLOCA EM UM ARRAY PARA A GENTE CONSEGUIR USAR DEPOIS
-                    $keys = $methods[$httpMethod]['variables'];
+                    $keys = $methods[$httpMethod]['variables']??[];
                     $methods[$httpMethod]['variables'] = array_combine($keys, $matches);
                     $methods[$httpMethod]['variables']['request'] = $this->request;
 
@@ -202,7 +202,6 @@ class Router{
 
             //RETORNA A EXECUÇÃO DA FUNÇÃO
             return call_user_func_array($route['controller'], $args);
-
 
         } catch (Exception $e) {
             return new Response($e->getCode(), $e->getMessage());

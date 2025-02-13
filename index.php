@@ -5,7 +5,13 @@ require __DIR__.'/vendor/autoload.php';
 use \App\Http\Router;
 use \App\Utils\View;
 
-define('URL', 'http://localhost/mvc2025');
+//Pacote do composer que ajudar a trabalhar com variáveis de ambiente
+use \WilliamCosta\DotEnv\Environment;
+//CARREGA VARIÁVEIS DE AMBIENTE
+Environment::load(__DIR__);
+
+//DEFINE A CONSTANTE DE URL DO PROJETO
+define('URL', getenv('URL'));
 
 //DEFINE O VALOR PADRÃO DAS VARIÁVEIS
 View::init([
